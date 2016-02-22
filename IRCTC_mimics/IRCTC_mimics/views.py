@@ -22,35 +22,62 @@ def getCoachNo(train):
 	obj = {"coach": "5S", "seatNo": 25, "birth": "UPPER"}
 	return obj
 
+## search train on travel date, source, destination
+def searchTrain(request):
+	if request.user.is_authenticated():
+		jsonObj = json.loads(request.body)
+		travelDate = jsonObj['travelDate']
+		source = jsonObj['source']
+		destination = jsonObj['destination']
+
+		args = {}
+
+		if source != None:
+			kwargs['location__locationText'] = source
+
+		if destination != None:
+			kwargs['location__locationText'] = destination
+
+		stations = Station.objects.filter(**kwargs)
+		trainList = []
+		for i in stations:
+			
+			obj = {"trainNo": i.train.trainNo, "trainName": i.train.trainName, "locationText": i.location.locationText, "arrivalTime": i.location.arrivalTime, "departureTime": i.location.departureTime}
+
+
+	else:
+		return HttpResponse(json.dumps({"validation":"You are not logged in.Please login first.","status":False}), content_type="application/json")
+
+
+## create view for seat reservation
 @transaction.atomic
 def seatReservation(request):
-	# if request.user.is_authenticated():
-	jsonObj = json.loads(request.body)
-	id = 1
-	user = UserDetail.objects.get(user__id=1)
-	
-	if jsonObj['mobileNo'] != None:
-		mobileNo = validate_mobile(str(jsonObj['mobileNo']))
-		if mobileNo == False:
-			return HttpResponse(json.dumps({"validation": "Invalid mobile number..!!", "status": False}), content_type = "application/json")
+	if request.user.is_authenticated():
+		jsonObj = json.loads(request.body)
+		user = UserDetail.objects.get(user__id=request.user.id)
+		
+		if jsonObj['mobileNo'] != None:
+			mobileNo = validate_mobile(str(jsonObj['mobileNo']))
+			if mobileNo == False:
+				return HttpResponse(json.dumps({"validation": "Invalid mobile number..!!", "status": False}), content_type = "application/json")
+		else:
+			return HttpResponse(json.dumps({"validation": "Enter mobile number..!!", "status": False}), content_type = "application/json")
+
+		journeyDate = datetime.datetime.fromtimestamp(jsonObj['journeyDate']/1000)
+
+		reservationQry = Reservation(firstName=jsonObj['firstName'], lastName=jsonObj['lastName'], age=jsonObj['age'], gender= jsonObj['genderId'],addressLine1=jsonObj['addressLine1'], addressLine2 = jsonObj['addressLine2'], 
+			state=jsonObj['state'], city=jsonObj['city'], pinNo=jsonObj['pinNo'], mobileNo=mobileNo, journeyDate=journeyDate)
+
+		reservationQry.userDetail = user
+		train = Train.objects.get(id=jsonObj['trainId'])
+		reservationQry.train = train
+		reservationQry.coachAndSeatNo = json.dumps(getCoachNo(train))
+		origin = Location.objects.get(id=jsonObj['originId'])
+		destination = Location.objects.get(id=jsonObj['destinationId'])
+		reservationQry.source = origin
+		reservationQry.destination = destination
+		pnrNo = generate_prn_number(train)
+		reservationQry.save()
+		return HttpResponse(json.dumps({"validation":"Your reservation process is completed Successfully.","status":True}), content_type="application/json")
 	else:
-		return HttpResponse(json.dumps({"validation": "Enter mobile number..!!", "status": False}), content_type = "application/json")
-
-	journeyDate = datetime.datetime.fromtimestamp(jsonObj['journeyDate']/1000)
-
-	reservationQry = Reservation(firstName=jsonObj['firstName'], lastName=jsonObj['lastName'], age=jsonObj['age'], gender= jsonObj['genderId'],addressLine1=jsonObj['addressLine1'], addressLine2 = jsonObj['addressLine2'], 
-		state=jsonObj['state'], city=jsonObj['city'], pinNo=jsonObj['pinNo'], mobileNo=mobileNo, journeyDate=journeyDate)
-
-	reservationQry.userDetail = user
-	train = Train.objects.get(id=jsonObj['trainId'])
-	reservationQry.train = train
-	reservationQry.coachAndSeatNo = json.dumps(getCoachNo(train))
-	origin = Location.objects.get(id=jsonObj['originId'])
-	destination = Location.objects.get(id=jsonObj['destinationId'])
-	reservationQry.source = origin
-	reservationQry.destination = destination
-	pnrNo = generate_prn_number(train)
-	reservationQry.save()
-	return HttpResponse(json.dumps({"validation":"Your reservation process is completed Successfully.","status":True}), content_type="application/json")
-	# else:
-	# 	return HttpResponse(json.dumps({"validation":"You are not logged in.Please login first.","status":False}), content_type="application/json")
+		return HttpResponse(json.dumps({"validation":"You are not logged in.Please login first.","status":False}), content_type="application/json")

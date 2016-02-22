@@ -12,7 +12,7 @@ class UserDetail(models.Model):
 
 
 class Location(models.Model): ## if we want we can take lat, lng here
-	location = models.CharField(max_length=50)
+	locationText = models.CharField(max_length=50)
 	arrivalTime = models.TimeField(null=True)
 	departureTime = models.TimeField(null=True)
 	stationName = models.CharField(max_length=100)
