@@ -15,16 +15,25 @@ class Location(models.Model):
 	lat = models.FloatField()
 	lng = models.FloatField()
 	locationText = models.CharField(max_length=50)
+	arrivalTime = models.TimeField(null=True)
+	departureTime = models.TimeField(null=True)
+	stationName = models.CharField(max_length=100)
+	isLastStop = models.BooleanField(default=False)
+	isFirstStop = models.BooleanField(default=False)
 
 class Train(models.Model):
 	trainNo = models.IntegerField()
 	trainName = models.CharField(max_length=100)
-	trainSource = models.ForeignKey('Location',related_name='trainSource')
-	trainDestination = models.ForeignKey('Location',related_name='trainDestination')
-	arrivalTime = models.TimeField(null=True)
-	departureTime = models.TimeField(null=True)
 	def __unicode__(self):
 		return self.trainName
+
+class Station(models.Model):
+	source = models.ForeignKey('Location',related_name='source')
+	destination = models.ForeignKey('Location',related_name='destination')
+	train = models.ForeignKey('Train')
+
+	def __unicode__(self):
+		return self.stationName
 
 class DepartureDay(models.Model):
 	MONDAY = 0
