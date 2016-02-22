@@ -11,10 +11,8 @@ class UserDetail(models.Model):
 	mobileNo = models.TextField()
 
 
-class Location(models.Model):
-	lat = models.FloatField()
-	lng = models.FloatField()
-	locationText = models.CharField(max_length=50)
+class Location(models.Model): ## if we want we can take lat, lng here
+	location = models.CharField(max_length=50)
 	arrivalTime = models.TimeField(null=True)
 	departureTime = models.TimeField(null=True)
 	stationName = models.CharField(max_length=100)
@@ -52,11 +50,6 @@ class Reservation(models.Model):
 	FEMALE = 1
 	GENDERCHOICES = ((MALE, 'Male'), (FEMALE, 'Female'))
 
-	SLEEPER = 0
-	AC3TIRE = 1
-	AC2TIRE = 2
-	BIRTHCHOICES = ((SLEEPER,'Sleeper'), (AC3TIRE, 'AC 3 Tire'), (AC2TIRE, 'AC 2 Tire'))
-
 	userDetail = models.ForeignKey('UserDetail')
 	firstName = models.CharField(max_length=30)
 	lastName = models.CharField(max_length=50)
@@ -70,9 +63,7 @@ class Reservation(models.Model):
 	mobileNo = models.TextField()
 	pnrNo = models.TextField()
 	journeyDate = models.DateTimeField()
-	className = models.CharField(max_length=50)
-	birth = models.IntegerField(choices=BIRTHCHOICES)
-	seatNo = models.IntegerField(blank=True, null=True)
+	coachAndSeatNo = models.TextField() 
 	source = models.ForeignKey('Location',related_name='source')
 	destination = models.ForeignKey('Location',related_name='destination')
 	train = models.ForeignKey('Train')
