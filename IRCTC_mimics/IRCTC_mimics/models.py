@@ -28,8 +28,7 @@ class Train(models.Model):
 		return self.trainName
 
 class Station(models.Model):
-	source = models.ForeignKey('Location',related_name='source')
-	destination = models.ForeignKey('Location',related_name='destination')
+	location = models.ForeignKey('Location')
 	train = models.ForeignKey('Train')
 
 	def __unicode__(self):
