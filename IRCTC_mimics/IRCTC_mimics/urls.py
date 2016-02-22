@@ -16,10 +16,12 @@ Including another URLconf
 from django.conf.urls import include, url
 from django.contrib import admin
 from .views import(
-   seatReservation
+   seatReservation,
+   searchTrain
 )
 
 urlpatterns = [
     url(r'^admin/', include(admin.site.urls)),
     url(r'^seatReservation/$', seatReservation),
+    url(r'^searchTrain/$', searchTrain),
 ]

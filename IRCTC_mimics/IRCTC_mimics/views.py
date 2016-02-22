@@ -1,4 +1,4 @@
-from models import UserDetail, Location, Train, Station, DepartureDay, Reservation
+from models import UserDetail, Train, Station, DepartureDay, Reservation
 from django.db import transaction
 from django.http import HttpResponseRedirect, HttpResponse
 import json
@@ -24,29 +24,38 @@ def getCoachNo(train):
 
 ## search train on travel date, source, destination
 def searchTrain(request):
-	if request.user.is_authenticated():
-		jsonObj = json.loads(request.body)
-		travelDate = jsonObj['travelDate']
-		source = jsonObj['source']
-		destination = jsonObj['destination']
+	# if request.user.is_authenticated():
+	jsonObj = json.loads(request.body)
+	travelDate = jsonObj['travelDate']
+	source = jsonObj['source']
+	destination = jsonObj['destination']
 
-		args = {}
+	kwargs = {}
 
-		if source != None:
-			kwargs['location__locationText'] = source
+	print source, destination, travelDate
 
-		if destination != None:
-			kwargs['location__locationText'] = destination
-
-		stations = Station.objects.filter(**kwargs)
-		trainList = []
-		for i in stations:
-			
-			obj = {"trainNo": i.train.trainNo, "trainName": i.train.trainName, "locationText": i.location.locationText, "arrivalTime": i.location.arrivalTime, "departureTime": i.location.departureTime}
-
-
+	if len(source) != 0 or len(destination) != 0:
+		kwargs['station__stationName__iexact'] = source.strip()
+		kwargs['station__stationName__iexact'] = destination.strip()
+		travelDate = datetime.datetime.fromtimestamp(travelDate/1000)
+		weekday = travelDate.weekday()
+		kwargs['departureday__depDay'] = weekday
 	else:
-		return HttpResponse(json.dumps({"validation":"You are not logged in.Please login first.","status":False}), content_type="application/json")
+		return HttpResponse(json.dumps({"validation": "Invalid parameter..!!", "status": False}), content_type = "application/json")
+
+	trains = Train.objects.filter(**kwargs)
+	print trains
+	trainList = []
+	for i in trains:
+		sourceStation = Station.objects.get(train=i, stationName__iexact=source.strip())
+		destinationStation = Station.objects.get(train=i, stationName__iexact=destination.strip())
+		obj = {"trainNo": i.trainNo, "trainName": i.trainName, "sourceArrivalTime": sourceStation.arrivalTime.strftime('%I:%M %p'), "sourceDepartureTime": sourceStation.departureTime.strftime('%I:%M %p'), 
+		"destinationArrivalTime": destinationStation.arrivalTime.strftime('%I:%M %p'), "destinationDepartureTime": destinationStation.departureTime.strftime('%I:%M %p'), "travelDate": travelDate.strftime('%b-%d-%Y'),
+		"source": source.strip(), "destination": destination.strip()}
+		trainList.append(obj)
+	return HttpResponse(json.dumps({"trainList": trainList,"status":True}), content_type="application/json")
+	# else:
+	# 	return HttpResponse(json.dumps({"validation":"You are not logged in.Please login first.","status":False}), content_type="application/json")
 
 
 ## create view for seat reservation
@@ -72,8 +81,8 @@ def seatReservation(request):
 		train = Train.objects.get(id=jsonObj['trainId'])
 		reservationQry.train = train
 		reservationQry.coachAndSeatNo = json.dumps(getCoachNo(train))
-		origin = Location.objects.get(id=jsonObj['originId'])
-		destination = Location.objects.get(id=jsonObj['destinationId'])
+		origin = Station.objects.get(id=jsonObj['originId'])
+		destination = Station.objects.get(id=jsonObj['destinationId'])
 		reservationQry.source = origin
 		reservationQry.destination = destination
 		pnrNo = generate_prn_number(train)

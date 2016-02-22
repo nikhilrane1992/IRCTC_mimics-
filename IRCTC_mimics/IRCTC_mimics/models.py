@@ -11,14 +11,6 @@ class UserDetail(models.Model):
 	mobileNo = models.TextField()
 
 
-class Location(models.Model): ## if we want we can take lat, lng here
-	locationText = models.CharField(max_length=50)
-	arrivalTime = models.TimeField(null=True)
-	departureTime = models.TimeField(null=True)
-	stationName = models.CharField(max_length=100)
-	isLastStop = models.BooleanField(default=False)
-	isFirstStop = models.BooleanField(default=False)
-
 class Train(models.Model):
 	trainNo = models.IntegerField()
 	trainName = models.CharField(max_length=100)
@@ -26,11 +18,15 @@ class Train(models.Model):
 		return self.trainName
 
 class Station(models.Model):
-	location = models.ForeignKey('Location')
 	train = models.ForeignKey('Train')
+	stationName = models.CharField(max_length=100)
+	isLastStop = models.BooleanField(default=False)
+	isFirstStop = models.BooleanField(default=False)
+	arrivalTime = models.TimeField(null=True)
+	departureTime = models.TimeField(null=True)
 
 	def __unicode__(self):
-		return self.stationName
+		return self.train.trainName
 
 class DepartureDay(models.Model):
 	MONDAY = 0
@@ -64,8 +60,8 @@ class Reservation(models.Model):
 	pnrNo = models.TextField()
 	journeyDate = models.DateTimeField()
 	coachAndSeatNo = models.TextField() 
-	source = models.ForeignKey('Location',related_name='source')
-	destination = models.ForeignKey('Location',related_name='destination')
+	source = models.ForeignKey('Station',related_name='source')
+	destination = models.ForeignKey('Station',related_name='destination')
 	train = models.ForeignKey('Train')
 	def __unicode__(self):
 		return self.firstName
