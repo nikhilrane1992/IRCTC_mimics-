@@ -24,38 +24,38 @@ def getCoachNo(train):
 
 ## search train on travel date, source, destination
 def searchTrain(request):
-	# if request.user.is_authenticated():
-	jsonObj = json.loads(request.body)
-	travelDate = jsonObj['travelDate']
-	source = jsonObj['source']
-	destination = jsonObj['destination']
+	if request.user.is_authenticated():
+		jsonObj = json.loads(request.body)
+		travelDate = jsonObj['travelDate']
+		source = jsonObj['source']
+		destination = jsonObj['destination']
 
-	kwargs = {}
+		kwargs = {}
 
-	print source, destination, travelDate
+		print source, destination, travelDate
 
-	if len(source) != 0 or len(destination) != 0:
-		kwargs['station__stationName__iexact'] = source.strip()
-		kwargs['station__stationName__iexact'] = destination.strip()
-		travelDate = datetime.datetime.fromtimestamp(travelDate/1000)
-		weekday = travelDate.weekday()
-		kwargs['departureday__depDay'] = weekday
+		if len(source) != 0 or len(destination) != 0:
+			kwargs['station__stationName__iexact'] = source.strip()
+			kwargs['station__stationName__iexact'] = destination.strip()
+			travelDate = datetime.datetime.fromtimestamp(travelDate/1000)
+			weekday = travelDate.weekday()
+			kwargs['departureday__depDay'] = weekday
+		else:
+			return HttpResponse(json.dumps({"validation": "Invalid parameter..!!", "status": False}), content_type = "application/json")
+
+		trains = Train.objects.filter(**kwargs)
+		print trains
+		trainList = []
+		for i in trains:
+			sourceStation = Station.objects.get(train=i, stationName__iexact=source.strip())
+			destinationStation = Station.objects.get(train=i, stationName__iexact=destination.strip())
+			obj = {"trainNo": i.trainNo, "trainName": i.trainName, "sourceArrivalTime": sourceStation.arrivalTime.strftime('%I:%M %p'), "sourceDepartureTime": sourceStation.departureTime.strftime('%I:%M %p'), 
+			"destinationArrivalTime": destinationStation.arrivalTime.strftime('%I:%M %p'), "destinationDepartureTime": destinationStation.departureTime.strftime('%I:%M %p'), "travelDate": travelDate.strftime('%b-%d-%Y'),
+			"source": source.strip(), "destination": destination.strip()}
+			trainList.append(obj)
+		return HttpResponse(json.dumps({"trainList": trainList,"status":True}), content_type="application/json")
 	else:
-		return HttpResponse(json.dumps({"validation": "Invalid parameter..!!", "status": False}), content_type = "application/json")
-
-	trains = Train.objects.filter(**kwargs)
-	print trains
-	trainList = []
-	for i in trains:
-		sourceStation = Station.objects.get(train=i, stationName__iexact=source.strip())
-		destinationStation = Station.objects.get(train=i, stationName__iexact=destination.strip())
-		obj = {"trainNo": i.trainNo, "trainName": i.trainName, "sourceArrivalTime": sourceStation.arrivalTime.strftime('%I:%M %p'), "sourceDepartureTime": sourceStation.departureTime.strftime('%I:%M %p'), 
-		"destinationArrivalTime": destinationStation.arrivalTime.strftime('%I:%M %p'), "destinationDepartureTime": destinationStation.departureTime.strftime('%I:%M %p'), "travelDate": travelDate.strftime('%b-%d-%Y'),
-		"source": source.strip(), "destination": destination.strip()}
-		trainList.append(obj)
-	return HttpResponse(json.dumps({"trainList": trainList,"status":True}), content_type="application/json")
-	# else:
-	# 	return HttpResponse(json.dumps({"validation":"You are not logged in.Please login first.","status":False}), content_type="application/json")
+		return HttpResponse(json.dumps({"validation":"You are not logged in.Please login first.","status":False}), content_type="application/json")
 
 
 ## create view for seat reservation
